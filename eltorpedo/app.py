@@ -20,7 +20,7 @@ from textual.widgets.option_list import Option
 from .claw import ClawStatus, config_errors, parse_statustext
 from .config import Config, Mode, detect_profile, save_keybinds
 from .gamepad import Gamepad, RawInput, list_devices, map_axes
-from .mav import MavLink
+from .mav import MavLink, serial_candidates
 from .state import VehicleState
 
 KEYBIND_LABELS = {
@@ -392,11 +392,14 @@ class ElTorpedoApp(App[None]):
             if self.mav.conn is None:
                 try:
                     self.mav.open()
-                    self.state.add_message("MAVLink socket open", 6)
+                    self.state.add_message(f"MAVLink open: {self.mav.endpoint}", 6)
                 except Exception as exc:
                     self.state.add_message(f"MAVLink open failed: {exc}", 3)
                     await asyncio.sleep(2.0)
                     continue
+            elif self._serial_appeared():
+                self.mav.close()
+                continue
             got = False
             for _ in range(64):
                 msg = self.mav.recv()
@@ -405,6 +408,12 @@ class ElTorpedoApp(App[None]):
                 got = True
                 self._handle_message(msg)
             await asyncio.sleep(0.005 if got else 0.01)
+
+    def _serial_appeared(self) -> bool:
+        """True when a serial autopilot port exists but the link is still UDP."""
+        if not self.cfg.link.autodetect or not self.mav.endpoint.startswith("udp"):
+            return False
+        return bool(serial_candidates())
 
     async def _gamepad_loop(self) -> None:
         announced = ""

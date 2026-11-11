@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import glob
+import os
+import time
+
 from pymavlink import mavutil
 
 from .config import LinkConfig
@@ -22,10 +26,19 @@ class MavLink:
         self.conn = None
         self.target_system = 1
         self.target_component = 1
+        self.endpoint = ""
 
     def open(self) -> None:
+        self.endpoint = ""
+        if self.cfg.autodetect and self.cfg.endpoint == LinkConfig.endpoint:
+            # Default endpoint: take the first serial autopilot found, if any.
+            device = next(iter(serial_candidates()), "")
+            if device:
+                self.endpoint = f"serial:{device}:{self.cfg.autodetect_baud}"
+        if not self.endpoint:
+            self.endpoint = self.cfg.endpoint
         self.conn = mavutil.mavlink_connection(
-            self.cfg.endpoint,
+            self.endpoint,
             source_system=self.cfg.source_system,
             source_component=self.cfg.source_component,
             autoreconnect=True,
@@ -144,6 +157,24 @@ class MavLink:
     def request_streams(self) -> None:
         for message_id, hz in STREAMS:
             self.set_message_interval(message_id, hz)
+
+
+def serial_candidates(dev_root: str = "/dev", modified_within_s: float = 10.0) -> list[str]:
+    """Serial autopilot ports, most recently added first.
+
+    Only devices attached in the last few seconds qualify, so a UART port that
+    exists from boot is never picked over a cable that was just plugged in.
+    """
+    cutoff = time.time() - modified_within_s
+    found = []
+    for pattern in ("ttyUSB*", "ttyACM*"):
+        for path in glob.glob(f"{dev_root}/{pattern}"):
+            try:
+                if os.stat(path).st_mtime >= cutoff:
+                    found.append(path)
+            except OSError:
+                continue
+    return sorted(found, key=lambda p: os.stat(p).st_mtime, reverse=True)
 
 
 def _clamp(value: int) -> int:

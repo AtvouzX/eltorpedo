@@ -11,7 +11,14 @@ DEFAULT_CONFIG = """\
 # Regenerated with comments if deleted. Override the path with --config.
 
 [link]
+# udpin listens for mavlink-router or SITL. Use udpout:192.168.1.50:14550
+# when the TUI should push to a remote router. A serial: endpoint is used as
+# given; mavlink-router is not required.
 endpoint = "udpin:0.0.0.0:14550"
+# While the endpoint above is unchanged, a serial autopilot plugged in during
+# the run is used instead: ttyUSB*, ttyACM* at autodetect_baud.
+autodetect = true
+autodetect_baud = 115200
 source_system = 255
 source_component = 191
 control_hz = 20
@@ -176,6 +183,8 @@ def apply_profile(cfg: "GamepadConfig", name: str) -> str:
 @dataclass
 class LinkConfig:
     endpoint: str = "udpin:0.0.0.0:14550"
+    autodetect: bool = True
+    autodetect_baud: int = 115200
     source_system: int = 255
     source_component: int = 191
     control_hz: float = 20.0
@@ -289,6 +298,8 @@ def load_config(path: Path | None = None, endpoint: str | None = None) -> Config
     link_raw = _section(data, "link")
     link = LinkConfig(
         endpoint=str(link_raw.get("endpoint", LinkConfig.endpoint)),
+        autodetect=bool(link_raw.get("autodetect", True)),
+        autodetect_baud=int(link_raw.get("autodetect_baud", 115200)),
         source_system=int(link_raw.get("source_system", 255)),
         source_component=int(link_raw.get("source_component", 191)),
         control_hz=float(link_raw.get("control_hz", 20)),

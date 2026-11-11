@@ -73,6 +73,61 @@ the TUI is flying: two `MANUAL_CONTROL` streams fight over the vehicle.
    The unit takes over `/dev/tty1` and is shipped disabled. It does not work
    over SSH; run the TUI manually from an SSH session instead.
 
+## Jetson direct to the Pixhawk (no router)
+
+The endpoint is passed straight to pymavlink, so any pymavlink connection
+string works. Use this for a single-machine setup; there is no router in the
+path.
+
+With the default `udpin` endpoint, detection is automatic: plug in the
+Pixhawk and the TUI switches to it, including when the cable goes in after
+startup. Only serial ports that were attached in the last 10 seconds are
+picked, so a UART port that exists from boot is never selected by accident.
+USB Pixhawk boards show up as `/dev/ttyUSB0`:
+
+```bash
+ls /dev/ttyUSB*
+```
+
+A manual endpoint overrides detection, both forms work:
+
+```bash
+uv run --python 3.12 eltorpedo --config config.toml \
+  --endpoint "serial:/dev/ttyUSB0:115200"
+```
+
+Telemetry UART from the Jetson header to Pixhawk `TELEM2` is never
+auto-detected; set it explicitly:
+
+```bash
+uv run --python 3.12 eltorpedo --config config.toml \
+  --endpoint "serial:/dev/ttyTHS1:57600"
+```
+
+Set the Pixhawk `SERIALn_BAUD` of the used port to match the baud above and
+`SERIALn_PROTOCOL=2` (MAVLink 2). Enable the Jetson UART (`jetson-io.py` or
+`nvidia-enable-ttyTHS`) and add the user to `dialout`:
+
+```bash
+sudo usermod -aG dialout "$USER"
+```
+
+To make a direct link permanent, put it in `config.toml` instead of the
+flag:
+
+```toml
+[link]
+endpoint = "serial:/dev/ttyUSB0:115200"
+# autodetect only applies while endpoint is the default udpin value.
+autodetect = true
+autodetect_baud = 115200
+```
+
+With a direct link the Raspberry Pi router is unused. QGroundControl then has
+to reach the Jetson, not the Pixhawk, or run without it. Keep the router when
+several consumers need the link or the TUI runs over the tether from another
+machine.
+
 ## Gamepad
 
 Connect the controller over USB. Xbox and PlayStation pads both work; the TUI
