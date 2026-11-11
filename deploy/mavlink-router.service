@@ -1,0 +1,12 @@
+[Unit]
+Description=MAVLink Router (Pixhawk USB to UDP)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/mavlink-routerd -c /etc/mavlink-router/main.conf
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

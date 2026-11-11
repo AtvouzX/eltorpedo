@@ -1,0 +1,26 @@
+[project]
+name = "eltorpedo"
+version = "0.1.0"
+description = "Textual TUI for ArduSub ROV control with an Xbox gamepad"
+requires-python = ">=3.11"
+dependencies = [
+    "textual>=0.70",
+    "pymavlink>=2.4.40",
+    "pygame>=2.5",
+]
+
+[project.scripts]
+eltorpedo = "eltorpedo.__main__:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["eltorpedo"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

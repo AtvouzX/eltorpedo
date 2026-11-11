@@ -1,0 +1,64 @@
+# eltorpedo configuration.
+# Regenerated with comments if deleted. Override the path with --config.
+
+[link]
+# udpin listens for mavlink-router or SITL. Use udpout:192.168.1.50:14550
+# when the TUI should push to a remote router.
+endpoint = "udpin:0.0.0.0:14550"
+source_system = 255
+source_component = 191
+control_hz = 20
+heartbeat_hz = 1
+link_timeout_s = 3.0
+gamepad_timeout_s = 0.25
+gamepad_disarm_s = 1.0
+
+[gamepad]
+# Pick a controller by name (case-insensitive substring). index is the fallback.
+preferred_name = "Xbox"
+# auto | xbox | playstation
+profile = "auto"
+index = 0
+deadzone = 0.08
+hat = 0
+
+# Optional overrides. Anything omitted comes from the detected profile.
+# [gamepad.axes.throttle]
+# index = 1
+# invert = true
+#
+# [gamepad.buttons]
+# claw_close = 0
+
+[claw]
+enabled = true
+close_bit = 0
+open_bit = 1
+stop_bit = 2
+press_ms = 150
+
+[claw.required]
+GRIP_ENABLE = 1
+GRIP_TYPE = 3
+BTN0_FUNCTION = 140
+BTN1_FUNCTION = 139
+BTN2_FUNCTION = 141
+
+[vehicle]
+unidirectional_forward = true
+
+[[vehicle.modes]]
+name = "MANUAL"
+id = 19
+
+[[vehicle.modes]]
+name = "STABILIZE"
+id = 0
+
+[[vehicle.modes]]
+name = "DEPTH HOLD"
+id = 2
+
+[ui]
+refresh_hz = 10
+messages = 5
